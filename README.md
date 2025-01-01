@@ -15,3 +15,15 @@ a vector of processor instructions from the binary data. It will be
 educational to work towards that, in any case. Even if it only parses
 the ELF header and the section headers and displays those in a readable
 format, it will be a useful project to work on.
+
+## Bitmap
+
+The [`bitmap/`](bitmap/) folder contains code to parse BMP files. Actually,
+it contains a bit more than that: It has a program to read a BMP file's
+headers and data, and for files in a 24-bit color format, to convert
+the pixel values to greyscale intensities and then write the converted
+data out to a new BMP file. But most of the work was in writing and reading
+the BMP files. The main library header is in [`bmp.h`](bitmap/bmp.h).
+
+The file history for this code is in the
+[numerical_projects](https://github.com/seansovine/numerical_projects) repo.
