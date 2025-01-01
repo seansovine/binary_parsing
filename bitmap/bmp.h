@@ -49,21 +49,21 @@ typedef struct PixelData {
   size_t height;
 } PixelData;
 
-void free_PixelData(PixelData *);
+void free_PixelData(PixelData *pixData);
 
 /* Function declarations. */
 
-BMPHeader *readHeader(FILE *);
+BMPHeader *readHeader(FILE *fp);
 
-BMPInfoHeader *readInfoHeader(FILE *);
+BMPInfoHeader *readInfoHeader(FILE *fp);
 
-void printHeaderInfo(BMPHeader *, BMPInfoHeader *);
+void printHeaderInfo(BMPHeader *bmpHeader, BMPInfoHeader *infoHeader);
 
-PixelData *readPixels(BMPHeader *, BMPInfoHeader *, FILE *);
+PixelData *readPixels(BMPHeader *bmpHeader, BMPInfoHeader *infoHeader, FILE *fp);
 
-PixelData *convertToGrayscale(PixelData *);
+PixelData *convertToGrayscale(PixelData *pixData);
 
-void writeImageFile(FILE *, BMPHeader *, BMPInfoHeader *, PixelData *,
-                    const char *, size_t);
+void writeImageFile(FILE *inFile, BMPHeader *bmpHeader, BMPInfoHeader *infoHeader, PixelData *inPixels,
+                    const char *fileName, size_t fNameLen);
 
 #endif

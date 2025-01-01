@@ -139,7 +139,7 @@ PixelData *convertToGrayscale(PixelData *pixData) {
 }
 
 void writeImageFile(FILE *inFile, BMPHeader *bmpHeader,
-                    BMPInfoHeader *infoHeader, PixelData *gsPixels,
+                    BMPInfoHeader *infoHeader, PixelData *inPixels,
                     const char *fileName, size_t fNameLen) {
   char outFileName[fNameLen + 15];
   strncpy(outFileName, fileName, fNameLen);
@@ -156,9 +156,9 @@ void writeImageFile(FILE *inFile, BMPHeader *bmpHeader,
   fwrite(someHeaderBytes, sizeof(uint8_t), headerLen, outFile);
 
   // Prepare to write pixels.
-  size_t height = gsPixels->height;
-  size_t width = gsPixels->width;
-  Pixel *pix = gsPixels->pixels;
+  size_t height = inPixels->height;
+  size_t width = inPixels->width;
+  Pixel *pix = inPixels->pixels;
 
   // Rows are padded to a multiple of 4 bytes.
   size_t rowSize = (infoHeader->bitcount / 8) * width;
