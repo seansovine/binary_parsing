@@ -9,12 +9,14 @@ We will start with ELF files, but we plan to work with others.
 [Here](elf/src/main.rs) we have the start of a Rust program for parsing
 ELF-format binary files.
 
-So far it verifies the ELF magic bytes and parses a few header fields.
-Ambitiously, we'd eventually like to get it to the point of extracting
-a vector of processor instructions from the binary data. It will be
-educational to work towards that, in any case. Even if it only parses
-the ELF header and the section headers and displays those in a readable
-format, it will be a useful project to work on.
+So far it reads the main ELF header fields and prints them with `debug`.
+Next I will add code to parse the program and section headers.
+Ambitiously, I'd eventually like to get it to the point of extracting
+processor instructions from the binary data. That will take
+some time, but it will be educational to work towards that, in any case.
+Even if it only ends up parsing the ELF header and the program and section
+headers and displaying those in a readable format, it will be a useful project
+to work on.
 
 ## Bitmap
 
