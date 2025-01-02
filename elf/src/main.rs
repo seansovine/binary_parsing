@@ -34,8 +34,8 @@ fn main() -> Result<(), String> {
   // In case we're reading a large file, we don't read it into memory all at once.
   let mut reader = FileReader::new(file);
 
-  const ELF64_HEADER_LEN: usize = 64;
-  reader.ensure_length(ELF64_HEADER_LEN)?;
+  let mut bytes_needed = ELF64_HEADER_LEN;
+  reader.ensure_length(bytes_needed)?;
 
   let buffer = reader.buffer();
 
@@ -77,7 +77,7 @@ fn main() -> Result<(), String> {
   let program_header_size =
     elf_header.program_header_entry_count as usize * elf_header.program_header_entry_size as usize;
 
-  let bytes_needed = elf_header.program_header_offset as usize + program_header_size;
+  bytes_needed = elf_header.program_header_offset as usize + program_header_size;
   reader.ensure_length(bytes_needed)?;
 
   let program_headers = read_program_headers_64(reader.buffer(), &elf_header);
@@ -90,9 +90,24 @@ fn main() -> Result<(), String> {
     println!("Data: {:#04x?}", program_header);
   }
 
+  // ---------------------
+  // Read section headers.
+
+  let section_header_size =
+    elf_header.section_header_entry_size as usize * elf_header.section_header_entry_count as usize;
+
+  bytes_needed = elf_header.section_header_offset as usize + section_header_size;
+  reader.ensure_length(bytes_needed)?;
+
+  let section_headers = read_section_headers_64(reader.buffer(), &elf_header);
+  println!("\n>> Section headers. <<");
+
+  for section_header in section_headers {
+    println!("Data: {:#04x?}", section_header);
+  }
+
   // --------
   // Success!
 
   Ok(())
 }
-

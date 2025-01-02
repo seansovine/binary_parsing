@@ -5,6 +5,8 @@ use std::mem::size_of;
 // ----------------
 // Main ELF header.
 
+pub const ELF64_HEADER_LEN: usize = 64;
+
 /// To start with, a low-level (uninterpreted)
 /// representation of the data in the header.
 #[derive(Debug)]
@@ -150,6 +152,25 @@ pub fn program_header_type_string(buffer: &[u8; 4]) -> String {
   };
 
   str_val.to_owned()
+}
+
+// ---------------------
+// Section header table.
+
+pub struct Elf64SectionHeaderEntry {
+  pub name_offset: u32,
+  // TODO: Add remaining fields.
+}
+
+pub fn read_section_headers_64(
+  buffer: &[u8],
+  elf_header: &Elf64Header,
+) -> Vec<Elf64ProgramHeaderEntry> {
+  let mut entries = vec![];
+
+  // TODO: Implement section header parsing.
+
+  entries
 }
 
 // -----------------------------------------
