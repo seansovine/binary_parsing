@@ -67,6 +67,7 @@ fn main() -> Result<(), String> {
     return Err("Reader for 32-bit ELF files is not implemented.".to_string());
   }
 
+  println!("\n>> ELF main header. <<");
   // Pretty print struct in hex.
   println!("\nHeader data: {:#04x?}", elf_header);
 
@@ -77,15 +78,14 @@ fn main() -> Result<(), String> {
     elf_header.program_header_entry_count as usize * elf_header.program_header_entry_size as usize;
 
   let bytes_needed = elf_header.program_header_offset as usize + program_header_size;
-
   reader.ensure_length(bytes_needed)?;
 
   let program_headers = read_program_headers_64(reader.buffer(), &elf_header);
+  println!("\n>> Program headers. <<");
 
   for program_header in program_headers {
     let segment_type = program_header_type_string(&program_header.segment_type);
     println!("\nProgram header type: {}", segment_type);
-
     // Pretty print struct in hex.
     println!("Data: {:#04x?}", program_header);
   }
@@ -95,3 +95,4 @@ fn main() -> Result<(), String> {
 
   Ok(())
 }
+

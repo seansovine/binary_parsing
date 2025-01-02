@@ -79,7 +79,14 @@ pub fn read_header_64(buffer: &[u8]) -> Elf64Header {
 #[derive(Debug)]
 pub struct Elf64ProgramHeaderEntry {
   pub segment_type: [u8; 4],
-  // TODO: Add remaining fields.
+  pub flags: u32,
+  //
+  pub offset: u64,
+  pub virtual_address: u64,
+  pub physical_address: u64,
+  pub file_size: u64,
+  pub mem_size: u64,
+  pub align: u64,
 }
 
 pub fn read_program_headers_64(
@@ -87,13 +94,14 @@ pub fn read_program_headers_64(
   elf_header: &Elf64Header,
 ) -> Vec<Elf64ProgramHeaderEntry> {
   let mut entries = vec![];
-  let ph_offset = elf_header.program_header_offset;
-  let ph_size = elf_header.program_header_entry_size as u64;
+
+  let ph_offset = elf_header.program_header_offset as usize;
+  let ph_size = elf_header.program_header_entry_size as usize;
 
   // Read each entry from the program header table.
-  for i in 0..elf_header.program_header_entry_count as u64 {
-    let start_offset = (ph_offset + i * ph_size) as usize;
-    let end_offset = start_offset + ph_size as usize;
+  for i in 0..elf_header.program_header_entry_count as usize {
+    let start_offset = ph_offset + i * ph_size;
+    let end_offset = start_offset + ph_size;
 
     let ph = read_program_header_64(&buffer[start_offset..end_offset]);
     entries.push(ph);
@@ -105,6 +113,14 @@ pub fn read_program_headers_64(
 pub fn read_program_header_64(buffer: &[u8]) -> Elf64ProgramHeaderEntry {
   Elf64ProgramHeaderEntry {
     segment_type: buffer[0..4].try_into().unwrap(),
+    flags: u32_from_le_slice(&buffer, 4),
+    //
+    offset: u64_from_le_slice(&buffer, 8),
+    virtual_address: u64_from_le_slice(&buffer, 16),
+    physical_address: u64_from_le_slice(&buffer, 24),
+    file_size: u64_from_le_slice(&buffer, 32),
+    mem_size: u64_from_le_slice(&buffer, 40),
+    align: u64_from_le_slice(&buffer, 48),
   }
 }
 
