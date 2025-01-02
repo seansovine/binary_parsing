@@ -35,7 +35,6 @@ pub struct Elf64Header {
     // 8 bytes
     program_header_entry_count: u16,
     section_header_entry_size: u16,
-    // 8 bytes
     section_header_entry_count: u16,
     section_header_names_index: u16,
 }
@@ -68,7 +67,6 @@ pub fn read_header_64(buffer: &[u8]) -> Elf64Header {
         //
         program_header_entry_count: u16_from_le_slice(buffer, 56),
         section_header_entry_size: u16_from_le_slice(buffer, 58),
-        //
         section_header_entry_count: u16_from_le_slice(buffer, 60),
         section_header_names_index: u16_from_le_slice(buffer, 62),
         //

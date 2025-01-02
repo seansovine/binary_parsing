@@ -10,7 +10,6 @@ const BUFFER_SIZE: usize = 64;
 pub struct FileReader {
   reader: BufReader<File>,
   current_buffer: Vec<u8>,
-  file_cursor: usize,
 }
 
 impl FileReader {
@@ -18,7 +17,6 @@ impl FileReader {
     FileReader {
       reader: BufReader::with_capacity(BUFFER_SIZE, file),
       current_buffer: vec![],
-      file_cursor: 0,
     }
   }
 

@@ -37,10 +37,6 @@ fn main() -> Result<(), String> {
   reader.ensure_length(64)?;
   let buffer = reader.buffer();
 
-  if buffer.is_empty() {
-    return Err("File is empty.".to_string());
-  }
-
   // -------------------
   // Verify magic bytes.
 
