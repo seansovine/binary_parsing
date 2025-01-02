@@ -2,15 +2,15 @@
 ///
 /// Created by sean on 1/1/25.
 ///
-mod parse;
 mod file_read;
+mod parse;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str;
 
-use crate::parse::{read_header_64, Elf64Header};
 use crate::file_read::FileReader;
+use crate::parse::*;
 
 // ------------
 // Some config.
@@ -34,7 +34,9 @@ fn main() -> Result<(), String> {
   // In case we're reading a large file, we don't read it into memory all at once.
   let mut reader = FileReader::new(file);
 
-  reader.ensure_length(64)?;
+  const ELF64_HEADER_LEN: usize = 64;
+  reader.ensure_length(ELF64_HEADER_LEN)?;
+
   let buffer = reader.buffer();
 
   // -------------------
@@ -56,17 +58,37 @@ fn main() -> Result<(), String> {
   // ----------------
   // Read ELF header.
 
-  let header: Elf64Header;
+  let elf_header: Elf64Header;
 
   // Ensure that file is 64-bit ELF.
   if buffer[4] == b'\x02' {
-    header = read_header_64(buffer);
+    elf_header = read_header_64(buffer);
   } else {
     return Err("Reader for 32-bit ELF files is not implemented.".to_string());
   }
 
   // Pretty print struct in hex.
-  println!("\nHeader data: {:#04x?}", header);
+  println!("\nHeader data: {:#04x?}", elf_header);
+
+  // ---------------------
+  // Read program headers.
+
+  let program_header_size =
+    elf_header.program_header_entry_count as usize * elf_header.program_header_entry_size as usize;
+
+  let bytes_needed = elf_header.program_header_offset as usize + program_header_size;
+
+  reader.ensure_length(bytes_needed)?;
+
+  let program_headers = read_program_headers_64(reader.buffer(), &elf_header);
+
+  for program_header in program_headers {
+    let segment_type = program_header_type_string(&program_header.segment_type);
+    println!("\nProgram header type: {}", segment_type);
+
+    // Pretty print struct in hex.
+    println!("Data: {:#04x?}", program_header);
+  }
 
   // --------
   // Success!
