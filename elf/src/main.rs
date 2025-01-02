@@ -21,7 +21,7 @@ const EXTRA_DEBUG: bool = false;
 // -------------------
 // Program entrypoint.
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), String> {
   println!("Parsing binary file: {}", FILE);
 
   // -----------------------------
@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let buffer = reader.fill_buf().unwrap();
 
   if buffer.is_empty() {
-    return Err(Box::new(std::io::Error::other("File is empty.")));
+    return Err("File is empty.".to_string());
   }
 
   // -------------------
@@ -52,9 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   } else {
     println!("Did not find ELF magic bytes; aborting file parse.");
 
-    return Err(Box::new(std::io::Error::other(
-      "Parse failed: Bad file format.",
-    )));
+    return Err("Parse failed: Bad file format.".to_string());
   }
 
   // ----------------
@@ -66,9 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   if buffer[4] == b'\x02' {
     header = read_header_64(buffer);
   } else {
-    return Err(Box::new(std::io::Error::other(
-      "Reader for 32-bit ELF files is not implemented.",
-    )));
+    return Err("Reader for 32-bit ELF files is not implemented.".to_string());
   }
 
   // Pretty print struct in hex.
