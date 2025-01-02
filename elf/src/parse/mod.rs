@@ -2,6 +2,9 @@
 ///
 use std::mem::size_of;
 
+// ----------------
+// Main ELF header.
+
 /// To start with, a low-level (uninterpreted)
 /// representation of the data in the header.
 #[derive(Debug)]
@@ -71,6 +74,24 @@ pub fn read_header_64(buffer: &[u8]) -> Elf64Header {
         //
     }
 }
+
+// ---------------------
+// Program header table.
+
+pub struct Elf64ProgramHeaderEntry {
+    // TODO: Add fields.
+}
+
+pub fn read_program_header_64(buffer: &[u8]) -> Vec<Elf64ProgramHeaderEntry> {
+    let entries = vec![];
+
+    // TODO: Read each entry from the program header table.
+
+    entries
+}
+
+// -----------------------------------------
+// Some utility functions for reading bytes.
 
 fn u16_from_le_slice(slice: &[u8], start: usize) -> u16 {
     let bound = start + size_of::<u16>();

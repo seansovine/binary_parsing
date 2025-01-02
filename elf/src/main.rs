@@ -3,12 +3,14 @@
 /// Created by sean on 1/1/25.
 ///
 mod parse;
+mod file_read;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::str;
 
 use crate::parse::{read_header_64, Elf64Header};
+use crate::file_read::FileReader;
 
 // ------------
 // Some config.
@@ -29,12 +31,11 @@ fn main() -> Result<(), String> {
 
   let file = File::open(FILE).unwrap();
 
-  const BUFFER_SIZE: usize = 64;
-
   // In case we're reading a large file, we don't read it into memory all at once.
-  let mut reader = BufReader::with_capacity(BUFFER_SIZE, file);
+  let mut reader = FileReader::new(file);
 
-  let buffer = reader.fill_buf().unwrap();
+  reader.ensure_length(64)?;
+  let buffer = reader.buffer();
 
   if buffer.is_empty() {
     return Err("File is empty.".to_string());
@@ -44,7 +45,8 @@ fn main() -> Result<(), String> {
   // Verify magic bytes.
 
   if EXTRA_DEBUG {
-    println!("\nFirst {BUFFER_SIZE} bytes are: {:x?}", buffer);
+    let buffer_len = buffer.len();
+    println!("\nFirst {buffer_len} bytes are: {:x?}", buffer);
   }
 
   if &buffer[..4] == b"\x7F\x45\x4c\x46" {
