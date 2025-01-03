@@ -91,10 +91,17 @@ pub struct Elf64ProgramHeaderEntry {
   pub align: u64,
 }
 
+pub struct Elf64ProgramHeaderInfo {
+  // Raw data from file.
+  pub header_data: Elf64ProgramHeaderEntry,
+  // Structured, extracted data.
+  pub type_string: String,
+}
+
 pub fn read_program_headers_64(
   buffer: &[u8],
   elf_header: &Elf64Header,
-) -> Vec<Elf64ProgramHeaderEntry> {
+) -> Vec<Elf64ProgramHeaderInfo> {
   let mut entries = vec![];
 
   let ph_offset = elf_header.program_header_offset as usize;
@@ -106,7 +113,13 @@ pub fn read_program_headers_64(
     let end_offset = start_offset + ph_size;
 
     let ph = read_program_header_64(&buffer[start_offset..end_offset]);
-    entries.push(ph);
+
+    let type_string = program_header_type_string(&ph.segment_type);
+
+    entries.push(Elf64ProgramHeaderInfo {
+      header_data: ph,
+      type_string: type_string,
+    });
   }
 
   entries
@@ -157,20 +170,89 @@ pub fn program_header_type_string(buffer: &[u8; 4]) -> String {
 // ---------------------
 // Section header table.
 
+#[derive(Debug)]
 pub struct Elf64SectionHeaderEntry {
   pub name_offset: u32,
+  pub section_type: [u8; 4],
   // TODO: Add remaining fields.
+}
+
+#[derive(Debug)]
+pub struct Elf64SectionHeaderInfo {
+  // Raw data from file.
+  pub header_data: Elf64SectionHeaderEntry,
+  // Structured, extracted data.
+  pub type_string: String,
 }
 
 pub fn read_section_headers_64(
   buffer: &[u8],
   elf_header: &Elf64Header,
-) -> Vec<Elf64ProgramHeaderEntry> {
+) -> Vec<Elf64SectionHeaderInfo> {
   let mut entries = vec![];
 
-  // TODO: Implement section header parsing.
+  let sh_offset = elf_header.section_header_offset as usize;
+  let sh_size = elf_header.section_header_entry_size as usize;
+
+  // Read each entry from the program header table.
+  for i in 0..elf_header.section_header_entry_count as usize {
+    let start_offset = sh_offset + i * sh_size;
+    let end_offset = start_offset + sh_size;
+
+    let sh = read_section_header_64(&buffer[start_offset..end_offset]);
+
+    let type_string = section_header_type_string(&sh.section_type);
+
+    entries.push(Elf64SectionHeaderInfo{
+      header_data: sh,
+      type_string: type_string,
+    })
+  }
 
   entries
+}
+
+pub fn read_section_header_64(buffer: &[u8]) -> Elf64SectionHeaderEntry {
+  Elf64SectionHeaderEntry {
+    name_offset: u32_from_le_slice(&buffer, 4),
+    section_type: buffer[4..8].try_into().unwrap(),
+
+    // TODO: Implement rest of section header parsing.
+  }
+}
+
+pub fn section_header_type_string(buffer: &[u8; 4]) -> String {
+  let str_val = match buffer {
+    // NOTE: File bytes are little endian; hence reverse order here.
+    b"\x00\x00\x00\x00" => "SHT_NULL",
+    b"\x01\x00\x00\x00" => "SHT_PROGBITS",
+    b"\x02\x00\x00\x00" => "SHT_SYNTAB",
+    b"\x03\x00\x00\x00" => "SHT_STRTAB",
+    b"\x04\x00\x00\x00" => "SHT_RELA",
+    b"\x05\x00\x00\x00" => "SHT_HASH",
+    b"\x06\x00\x00\x00" => "SHT_DYNAMIC",
+    b"\x07\x00\x00\x00" => "SHT_NOTE",
+    b"\x08\x00\x00\x00" => "SHT_NOBITS",
+    b"\x09\x00\x00\x00" => "SHT_REL",
+    b"\x0A\x00\x00\x00" => "SHT_SHLIB",
+    b"\x0B\x00\x00\x00" => "SHT_DYNSYM",
+    b"\x0E\x00\x00\x00" => "SHT_INIT_ARRAY",
+    b"\x0F\x00\x00\x00" => "SHT_FINI_ARRAY",
+    b"\x10\x00\x00\x00" => "SHT_PREINIT_ARRAY",
+    b"\x11\x00\x00\x00" => "SHT_GROUP",
+    b"\x12\x00\x00\x00" => "SHT_SYMTAB_SHNDX",
+    b"\x13\x00\x00\x00" => "SHT_NUM",
+
+    // 0x60000000 and above are OS-specific.
+    buf if buf[3] & b'\xf0' >= b'\x60' => "OS_SPECIFIC",
+
+    _ => {
+      let buff_in_be: Vec<&u8> = buffer.iter().rev().collect();
+      &format!("UNRECOGNIZED TYPE: {:02x?}", buff_in_be)
+    }
+  };
+
+  str_val.to_owned()
 }
 
 // -----------------------------------------

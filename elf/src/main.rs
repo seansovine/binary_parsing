@@ -84,10 +84,9 @@ fn main() -> Result<(), String> {
   println!("\n>> Program headers. <<");
 
   for program_header in program_headers {
-    let segment_type = program_header_type_string(&program_header.segment_type);
-    println!("\nProgram header type: {}", segment_type);
+    println!("\nProgram header type: {}", program_header.type_string);
     // Pretty print struct in hex.
-    println!("Data: {:#04x?}", program_header);
+    println!("Data: {:#04x?}", program_header.header_data);
   }
 
   // ---------------------
@@ -103,7 +102,8 @@ fn main() -> Result<(), String> {
   println!("\n>> Section headers. <<");
 
   for section_header in section_headers {
-    println!("Data: {:#04x?}", section_header);
+    println!("\nSection header type: {}", section_header.type_string);
+    println!("Data: {:#04x?}", section_header.header_data);
   }
 
   // --------
