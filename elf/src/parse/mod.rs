@@ -1,5 +1,9 @@
 /// Tools for parsing ELF files.
 ///
+mod utils;
+
+use crate::parse::utils::from_le_bytes;
+
 use std::mem::size_of;
 
 // ----------------
@@ -55,22 +59,22 @@ pub fn read_header_64(buffer: &[u8]) -> Elf64Header {
     //
     object_type: buffer[16..18].try_into().unwrap(),
     machine: buffer[18..20].try_into().unwrap(),
-    version: u32_from_le_slice(buffer, 20),
+    version: from_le_bytes!(u32, buffer, 20),
     //
-    entry_point: u64_from_le_slice(buffer, 24),
+    entry_point: from_le_bytes!(u64, buffer, 24),
     //
-    program_header_offset: u64_from_le_slice(buffer, 32),
+    program_header_offset: from_le_bytes!(u64, buffer, 32),
     //
-    section_header_offset: u64_from_le_slice(buffer, 40),
+    section_header_offset: from_le_bytes!(u64, buffer, 40),
     //
-    flags: u32_from_le_slice(buffer, 48),
-    header_size: u16_from_le_slice(buffer, 52),
-    program_header_entry_size: u16_from_le_slice(buffer, 54),
+    flags: from_le_bytes!(u32, buffer, 48),
+    header_size: from_le_bytes!(u16, buffer, 52),
+    program_header_entry_size: from_le_bytes!(u16, buffer, 54),
     //
-    program_header_entry_count: u16_from_le_slice(buffer, 56),
-    section_header_entry_size: u16_from_le_slice(buffer, 58),
-    section_header_entry_count: u16_from_le_slice(buffer, 60),
-    section_header_names_index: u16_from_le_slice(buffer, 62),
+    program_header_entry_count: from_le_bytes!(u16, buffer, 56),
+    section_header_entry_size: from_le_bytes!(u16, buffer, 58),
+    section_header_entry_count: from_le_bytes!(u16, buffer, 60),
+    section_header_names_index: from_le_bytes!(u16, buffer, 62),
     //
   }
 }
@@ -128,14 +132,14 @@ pub fn read_program_headers_64(
 pub fn read_program_header_64(buffer: &[u8]) -> Elf64ProgramHeaderEntry {
   Elf64ProgramHeaderEntry {
     segment_type: buffer[0..4].try_into().unwrap(),
-    flags: u32_from_le_slice(&buffer, 4),
+    flags: from_le_bytes!(u32, &buffer, 4),
     //
-    offset: u64_from_le_slice(&buffer, 8),
-    virtual_address: u64_from_le_slice(&buffer, 16),
-    physical_address: u64_from_le_slice(&buffer, 24),
-    file_size: u64_from_le_slice(&buffer, 32),
-    mem_size: u64_from_le_slice(&buffer, 40),
-    align: u64_from_le_slice(&buffer, 48),
+    offset: from_le_bytes!(u64, &buffer, 8),
+    virtual_address: from_le_bytes!(u64, &buffer, 16),
+    physical_address: from_le_bytes!(u64, &buffer, 24),
+    file_size: from_le_bytes!(u64, &buffer, 32),
+    mem_size: from_le_bytes!(u64, &buffer, 40),
+    align: from_le_bytes!(u64, &buffer, 48),
   }
 }
 
@@ -203,7 +207,7 @@ pub fn read_section_headers_64(
 
     let type_string = section_header_type_string(&sh.section_type);
 
-    entries.push(Elf64SectionHeaderInfo{
+    entries.push(Elf64SectionHeaderInfo {
       header_data: sh,
       type_string: type_string,
     })
@@ -214,9 +218,8 @@ pub fn read_section_headers_64(
 
 pub fn read_section_header_64(buffer: &[u8]) -> Elf64SectionHeaderEntry {
   Elf64SectionHeaderEntry {
-    name_offset: u32_from_le_slice(&buffer, 4),
+    name_offset: from_le_bytes!(u32, &buffer, 4),
     section_type: buffer[4..8].try_into().unwrap(),
-
     // TODO: Implement rest of section header parsing.
   }
 }
@@ -253,25 +256,4 @@ pub fn section_header_type_string(buffer: &[u8; 4]) -> String {
   };
 
   str_val.to_owned()
-}
-
-// -----------------------------------------
-// Some utility functions for reading bytes.
-
-fn u16_from_le_slice(slice: &[u8], start: usize) -> u16 {
-  let bound = start + size_of::<u16>();
-  let array = slice[start..bound].try_into().unwrap();
-  u16::from_le_bytes(array)
-}
-
-fn u32_from_le_slice(slice: &[u8], start: usize) -> u32 {
-  let bound = start + size_of::<u32>();
-  let array = slice[start..bound].try_into().unwrap();
-  u32::from_le_bytes(array)
-}
-
-fn u64_from_le_slice(slice: &[u8], start: usize) -> u64 {
-  let bound = start + size_of::<u64>();
-  let array = slice[start..bound].try_into().unwrap();
-  u64::from_le_bytes(array)
 }
