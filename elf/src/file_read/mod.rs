@@ -8,39 +8,39 @@ use std::io::{BufRead, BufReader};
 const BUFFER_SIZE: usize = 64;
 
 pub struct FileReader {
-  reader: BufReader<File>,
-  current_buffer: Vec<u8>,
+    reader: BufReader<File>,
+    current_buffer: Vec<u8>,
 }
 
 impl FileReader {
-  pub fn new(file: File) -> FileReader {
-    FileReader {
-      reader: BufReader::with_capacity(BUFFER_SIZE, file),
-      current_buffer: vec![],
-    }
-  }
-
-  /// Ensures our buffer contains at least `length` bytes.
-  pub fn ensure_length(&mut self, length: usize) -> Result<(), String> {
-    while self.current_buffer.len() < length {
-      let buffer = self.reader.fill_buf().unwrap();
-      self.current_buffer.extend_from_slice(buffer);
-
-      let bytes_read = buffer.len();
-
-      if bytes_read == 0 {
-        return Err(String::from(
-          "Requested file contains less than requested number of bytes.",
-        ));
-      }
-
-      self.reader.consume(bytes_read);
+    pub fn new(file: File) -> FileReader {
+        FileReader {
+            reader: BufReader::with_capacity(BUFFER_SIZE, file),
+            current_buffer: vec![],
+        }
     }
 
-    Ok(())
-  }
+    /// Ensures our buffer contains at least `length` bytes.
+    pub fn ensure_length(&mut self, length: usize) -> Result<(), String> {
+        while self.current_buffer.len() < length {
+            let buffer = self.reader.fill_buf().unwrap();
+            self.current_buffer.extend_from_slice(buffer);
 
-  pub fn buffer(&self) -> &[u8] {
-    &self.current_buffer[0..]
-  }
+            let bytes_read = buffer.len();
+
+            if bytes_read == 0 {
+                return Err(String::from(
+                    "Requested file contains less than requested number of bytes.",
+                ));
+            }
+
+            self.reader.consume(bytes_read);
+        }
+
+        Ok(())
+    }
+
+    pub fn buffer(&self) -> &[u8] {
+        &self.current_buffer[0..]
+    }
 }
