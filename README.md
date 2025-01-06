@@ -9,14 +9,20 @@ We will start with ELF files, but we plan to work with others.
 [Here](elf/src/main.rs) we have the start of a Rust program for parsing
 ELF-format binary files.
 
-So far it reads the main ELF header fields and prints them with `debug`.
-Next I will add code to parse the program and section headers.
-Ambitiously, I'd eventually like to get it to the point of extracting
-processor instructions from the binary data. That will take
-some time, but it will be educational to work towards that, in any case.
-Even if it only ends up parsing the ELF header and the program and section
-headers and displaying those in a readable format, it will be a useful project
-to work on.
+This reads the main, program, and section headers from a 64-bit, little
+endian ELF file and prints their data to the console. It retrieves the
+string names for the sections from the string table section of the file,
+and it extracts the type name for each program and section header. Note
+that it doesn't yet give the OS-specific program header type names,
+though we plan to add those soon (most likely by finding how they're
+handled in the GNU binutils `readelf` source code).
+
+[Here](./elf/src/README.md) are a few notes
+on the code for this project.
+
+Ambitiously, I'd eventually like to get this to the point of extracting
+processor instructions from the binary data. That would take
+some time, but would be educational to work towards, in any case.
 
 ## Bitmap
 

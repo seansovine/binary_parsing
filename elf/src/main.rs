@@ -118,6 +118,7 @@ fn main() -> Result<(), String> {
             section_header.type_string
         );
         println!("Section header name: {}", section_header.name);
+        // Pretty print struct in hex.
         println!("Data: {:#04x?}", section_header.header_data);
     });
 
