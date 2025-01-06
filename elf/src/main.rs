@@ -107,6 +107,7 @@ fn main() -> Result<(), String> {
 
     for section_header in section_headers {
         println!("\nSection header type: {}", section_header.type_string);
+        println!("Section header name: {}", section_header.name);
         println!("Data: {:#04x?}", section_header.header_data);
     }
 

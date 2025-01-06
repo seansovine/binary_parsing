@@ -20,8 +20,12 @@ pub(crate) use from_le_bytes;
 /// Tries to extract null-terminated string from byte slice.
 /// This is maybe no longer needed.
 pub fn read_string(bytes: &[u8]) -> Option<String> {
+    if bytes[0] == b'\x00' {
+        return Some(String::default());
+    }
+
     for i in 0..bytes.len() {
-        if bytes[i] == b'\0' {
+        if bytes[i] == b'\x00' {
             let string = String::from_utf8_lossy(&bytes[..i]).to_string();
             return Some(string);
         }

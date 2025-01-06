@@ -5,6 +5,7 @@ mod utils;
 use crate::file_read::FileReader;
 use crate::parse::utils::*;
 
+use std::collections::HashMap;
 use std::mem::size_of;
 
 // ----------------
@@ -209,6 +210,9 @@ pub fn read_section_headers_64(
     let mut entries = read_section_header_entries_64(&buffer, &elf_header);
     let mut headers: Vec<Elf64SectionHeaderInfo> = vec![];
 
+    // Each table maps the offset in the table to the string at that offset.
+    let mut string_tables: Vec<HashMap<usize, String>> = vec![];
+
     // Find string table entries.
     // TODO: Properly read the string table sections and generate string table.
     for entry in &entries {
@@ -224,16 +228,25 @@ pub fn read_section_headers_64(
             buffer = reader.buffer();
 
             // TODO: Use the extracted string table.
-            read_string_table(&buffer[start..end]);
+            let st_entry = read_string_table(&buffer[start..end]);
+            string_tables.push(st_entry);
         }
     }
 
+    let section_name_table = string_tables.last().unwrap();
+
     for entry in entries {
         let type_string = section_header_type_string(&entry.section_type);
+        let name_offset = entry.name_offset as usize;
+        let name_string = if section_name_table.contains_key(&name_offset) {
+            &section_name_table[&name_offset]
+        } else {
+            "<NAME_NOT_FOUND>"
+        };
 
         headers.push(Elf64SectionHeaderInfo {
             header_data: entry,
-            name: String::from("<PLACEHOLDER>"),
+            name: name_string.to_string(),
             type_string,
         })
     }
@@ -264,7 +277,7 @@ pub fn read_section_header_entries_64(
 
 pub fn read_section_header_entry_64(buffer: &[u8]) -> Elf64SectionHeaderEntry {
     Elf64SectionHeaderEntry {
-        name_offset: from_le_bytes!(u32, &buffer, 4),
+        name_offset: from_le_bytes!(u32, &buffer, 0),
         section_type: buffer[4..8].try_into().unwrap(),
         flags: from_le_bytes!(u64, buffer, 8),
         addr: from_le_bytes!(u64, buffer, 16),
@@ -315,11 +328,14 @@ pub fn section_header_type_string(buffer: &[u8; 4]) -> String {
 // Process string table sections.
 
 /// Returns a vector of all
-fn read_string_table(buffer: &[u8]) -> Vec<String> {
-    let mut strings: Vec<String> = vec![];
+fn read_string_table(buffer: &[u8]) -> HashMap<usize, String> {
+    let mut string_table: HashMap<usize, String> = HashMap::default();
     let mut last_null: usize = 0;
 
-    for i in 0..buffer.len() {
+    string_table.insert(0, String::default());
+
+    // NOTE: String tables apparently always start with empty string.
+    for i in 1..buffer.len() {
         if buffer[i] == b'\x00' {
             // This version replaces unrecognized sequence w/ replacement character.
             let new_string = if i > last_null {
@@ -327,11 +343,13 @@ fn read_string_table(buffer: &[u8]) -> Vec<String> {
             } else {
                 String::new()
             };
-            strings.push(new_string);
+            string_table.insert(last_null + 1, new_string);
 
             last_null = i;
         }
     }
 
-    strings
+    println!("\nFound string table: \n\n{:#?}\n", string_table);
+
+    string_table
 }
