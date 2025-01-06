@@ -12,6 +12,8 @@ use std::str;
 use crate::file_read::FileReader;
 use crate::parse::*;
 
+use colored::Colorize;
+
 // ------------
 // Some config.
 
@@ -71,9 +73,9 @@ fn main() -> Result<(), String> {
         );
     }
 
-    println!("\n>> ELF main header. <<");
+    println!("\n>> {} <<", "ELF main header.".red());
     // Pretty print struct in hex.
-    println!("\nHeader data: {:#04x?}", elf_header);
+    println!("\n{}: {:#04x?}", "Header data".blue().bold(), elf_header);
 
     // ---------------------
     // Read program headers.
@@ -85,10 +87,14 @@ fn main() -> Result<(), String> {
     reader.ensure_length(bytes_needed)?;
 
     let program_headers = read_program_headers_64(reader.buffer(), &elf_header);
-    println!("\n>> Program headers. <<");
+    println!("\n>> {} <<", "Program headers.".red());
 
     for program_header in program_headers {
-        println!("\nProgram header type: {}", program_header.type_string);
+        println!(
+            "\n{} type: {}",
+            "Program header".blue().bold(),
+            program_header.type_string
+        );
         // Pretty print struct in hex.
         println!("Data: {:#04x?}", program_header.header_data);
     }
@@ -103,10 +109,14 @@ fn main() -> Result<(), String> {
     reader.ensure_length(bytes_needed)?;
 
     let section_headers = read_section_headers_64(&mut reader, &elf_header);
-    println!("\n>> Section headers. <<");
+    println!("\n>> {} <<", "Section headers.".red());
 
     for section_header in section_headers {
-        println!("\nSection header type: {}", section_header.type_string);
+        println!(
+            "\n{} type: {}",
+            "Section header".yellow().bold(),
+            section_header.type_string
+        );
         println!("Section header name: {}", section_header.name);
         println!("Data: {:#04x?}", section_header.header_data);
     }

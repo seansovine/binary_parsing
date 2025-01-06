@@ -258,7 +258,7 @@ pub fn read_section_header_entries_64(
     let sh_offset = elf_header.section_header_offset as usize;
     let sh_size = elf_header.section_header_entry_size as usize;
 
-    // Read each entry from the program header table.
+    // Read each entry from the section header table.
     for i in 0..elf_header.section_header_entry_count as usize {
         let start_offset = sh_offset + i * sh_size;
         let end_offset = start_offset + sh_size;
