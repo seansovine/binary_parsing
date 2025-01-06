@@ -100,7 +100,7 @@ fn main() -> Result<(), String> {
   bytes_needed = elf_header.section_header_offset as usize + section_header_size;
   reader.ensure_length(bytes_needed)?;
 
-  let section_headers = read_section_headers_64(reader.buffer(), &elf_header);
+  let section_headers = read_section_headers_64(&mut reader, &elf_header);
   println!("\n>> Section headers. <<");
 
   for section_header in section_headers {

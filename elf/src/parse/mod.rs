@@ -2,7 +2,8 @@
 ///
 mod utils;
 
-use crate::parse::utils::from_le_bytes;
+use crate::file_read::FileReader;
+use crate::parse::utils::*;
 
 use std::mem::size_of;
 
@@ -98,6 +99,7 @@ pub struct Elf64ProgramHeaderEntry {
 pub struct Elf64ProgramHeaderInfo {
   // Raw data from file.
   pub header_data: Elf64ProgramHeaderEntry,
+
   // Structured, extracted data.
   pub type_string: String,
 }
@@ -178,21 +180,71 @@ pub fn program_header_type_string(buffer: &[u8; 4]) -> String {
 pub struct Elf64SectionHeaderEntry {
   pub name_offset: u32,
   pub section_type: [u8; 4],
-  // TODO: Add remaining fields.
+  pub flags: u64,
+  pub addr: u64,
+  pub offset: u64,
+  pub size: u64,
+  pub link: u32,
+  pub info: u32,
+  pub addr_align: u64,
+  pub entry_size: u64,
 }
 
 #[derive(Debug)]
 pub struct Elf64SectionHeaderInfo {
   // Raw data from file.
   pub header_data: Elf64SectionHeaderEntry,
+
   // Structured, extracted data.
+  pub name: String,
   pub type_string: String,
 }
 
 pub fn read_section_headers_64(
-  buffer: &[u8],
+  reader: &mut FileReader,
   elf_header: &Elf64Header,
 ) -> Vec<Elf64SectionHeaderInfo> {
+  let mut buffer = reader.buffer();
+
+  let mut entries = read_section_header_entries_64(&buffer, &elf_header);
+  let mut headers: Vec<Elf64SectionHeaderInfo> = vec![];
+
+  // Find string table entries.
+  // TODO: Properly read the string table sections and generate string table.
+  for entry in &entries {
+    let type_string = section_header_type_string(&entry.section_type);
+
+    if type_string == "SHT_STRTAB" {
+      let start = entry.offset as usize;
+      let end = (entry.offset + entry.size) as usize;
+
+      reader
+        .ensure_length(end)
+        .expect("Not enough bytes in file to accommodate offset and size of string table entry.");
+      buffer = reader.buffer();
+
+      // TODO: Use the extracted string table.
+      read_string_table(&buffer[start..end]);
+    }
+  }
+
+  for entry in entries {
+    let type_string = section_header_type_string(&entry.section_type);
+
+    headers.push(Elf64SectionHeaderInfo {
+      header_data: entry,
+      name: String::from("<PLACEHOLDER>"),
+      type_string,
+    })
+  }
+
+  headers
+}
+
+pub fn read_section_header_entries_64(
+  buffer: &[u8],
+  elf_header: &Elf64Header,
+) -> Vec<Elf64SectionHeaderEntry> {
   let mut entries = vec![];
 
   let sh_offset = elf_header.section_header_offset as usize;
@@ -203,24 +255,25 @@ pub fn read_section_headers_64(
     let start_offset = sh_offset + i * sh_size;
     let end_offset = start_offset + sh_size;
 
-    let sh = read_section_header_64(&buffer[start_offset..end_offset]);
-
-    let type_string = section_header_type_string(&sh.section_type);
-
-    entries.push(Elf64SectionHeaderInfo {
-      header_data: sh,
-      type_string: type_string,
-    })
+    let sh = read_section_header_entry_64(&buffer[start_offset..end_offset]);
+    entries.push(sh)
   }
 
   entries
 }
 
-pub fn read_section_header_64(buffer: &[u8]) -> Elf64SectionHeaderEntry {
+pub fn read_section_header_entry_64(buffer: &[u8]) -> Elf64SectionHeaderEntry {
   Elf64SectionHeaderEntry {
     name_offset: from_le_bytes!(u32, &buffer, 4),
     section_type: buffer[4..8].try_into().unwrap(),
-    // TODO: Implement rest of section header parsing.
+    flags: from_le_bytes!(u64, buffer, 8),
+    addr: from_le_bytes!(u64, buffer, 16),
+    offset: from_le_bytes!(u64, buffer, 24),
+    size: from_le_bytes!(u64, buffer, 32),
+    link: from_le_bytes!(u32, buffer, 40),
+    info: from_le_bytes!(u32, buffer, 44),
+    addr_align: from_le_bytes!(u64, buffer, 48),
+    entry_size: from_le_bytes!(u64, buffer, 56),
   }
 }
 
@@ -256,4 +309,29 @@ pub fn section_header_type_string(buffer: &[u8; 4]) -> String {
   };
 
   str_val.to_owned()
+}
+
+// ------------------------------
+// Process string table sections.
+
+/// Returns a vector of all
+fn read_string_table(buffer: &[u8]) -> Vec<String> {
+  let mut strings: Vec<String> = vec![];
+  let mut last_null: usize = 0;
+
+  for i in 0..buffer.len() {
+    if buffer[i] == b'\x00' {
+      // This version replaces unrecognized sequence w/ replacement character.
+      let new_string = if i > last_null {
+        String::from_utf8_lossy(&buffer[(last_null + 1)..i]).to_string()
+      } else {
+        String::new()
+      }
+      strings.push(new_string);
+
+      last_null = i;
+    }
+  }
+
+  strings
 }

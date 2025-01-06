@@ -14,3 +14,17 @@ macro_rules! from_le_bytes {
 }
 
 pub(crate) use from_le_bytes;
+
+// ----
+
+/// We consider using this to
+pub fn read_string(bytes: &[u8]) -> Option<String> {
+  for i in 0..bytes.len() {
+    if bytes[i] == b'\0' {
+      let string = String::from_utf8_lossy(&bytes[..i]).to_string();
+      return Some(string);
+    }
+  }
+
+  None
+}
