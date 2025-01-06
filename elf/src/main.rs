@@ -60,11 +60,13 @@ fn main() -> Result<(), String> {
 
   let elf_header: Elf64Header;
 
+  // This reader currently supports 64-bit little endian only.
+
   // Ensure that file is 64-bit ELF.
-  if buffer[4] == b'\x02' {
+  if buffer[4] == b'\x02' && buffer[5] == b'\x01' {
     elf_header = read_header_64(buffer);
   } else {
-    return Err("Reader for 32-bit ELF files is not implemented.".to_string());
+    return Err("This reader currently only supports 64-bit little endian ELF files.".to_string());
   }
 
   println!("\n>> ELF main header. <<");
