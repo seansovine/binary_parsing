@@ -210,43 +210,38 @@ pub fn read_section_headers_64(
     let mut entries = read_section_header_entries_64(&buffer, &elf_header);
     let mut headers: Vec<Elf64SectionHeaderInfo> = vec![];
 
-    // Each table maps the offset in the table to the string at that offset.
-    let mut string_tables: Vec<HashMap<usize, String>> = vec![];
+    let mut string_table_entries: Vec<&Elf64SectionHeaderEntry> = vec![];
 
     // Find string table entries.
-    // TODO: Properly read the string table sections and generate string table.
     for entry in &entries {
         let type_string = section_header_type_string(&entry.section_type);
-
         if type_string == "SHT_STRTAB" {
-            let start = entry.offset as usize;
-            let end = (entry.offset + entry.size) as usize;
-
-            reader.ensure_length(end).expect(
-                "Not enough bytes in file to accommodate offset and size of string table entry.",
-            );
-            buffer = reader.buffer();
-
-            // TODO: Use the extracted string table.
-            let st_entry = read_string_table(&buffer[start..end]);
-            string_tables.push(st_entry);
+            string_table_entries.push(entry);
         }
     }
 
-    let section_name_table = string_tables.last().unwrap();
+    // NOTE: We assume the last table section entry is the one with section names.
+    // Evidence from examples suggests this, but we should find it in the docs.
+
+    let section_name_table_entry = string_table_entries.last().unwrap();
+    let table_start = section_name_table_entry.offset as usize;
+    let table_end = table_start + section_name_table_entry.size as usize;
+
+    reader
+        .ensure_length(table_end)
+        .expect("Not enough bytes in file to accommodate offset and size of string table entry.");
+    buffer = reader.buffer();
+
+    let table_buffer = &buffer[table_start..table_end];
 
     for entry in entries {
         let type_string = section_header_type_string(&entry.section_type);
         let name_offset = entry.name_offset as usize;
-        let name_string = if section_name_table.contains_key(&name_offset) {
-            &section_name_table[&name_offset]
-        } else {
-            "<NAME_NOT_FOUND>"
-        };
+        let name_string = read_string(&table_buffer, name_offset).unwrap();
 
         headers.push(Elf64SectionHeaderInfo {
             header_data: entry,
-            name: name_string.to_string(),
+            name: name_string,
             type_string,
         })
     }
@@ -322,34 +317,4 @@ pub fn section_header_type_string(buffer: &[u8; 4]) -> String {
     };
 
     str_val.to_owned()
-}
-
-// ------------------------------
-// Process string table sections.
-
-/// Returns a vector of all
-fn read_string_table(buffer: &[u8]) -> HashMap<usize, String> {
-    let mut string_table: HashMap<usize, String> = HashMap::default();
-    let mut last_null: usize = 0;
-
-    string_table.insert(0, String::default());
-
-    // NOTE: String tables apparently always start with empty string.
-    for i in 1..buffer.len() {
-        if buffer[i] == b'\x00' {
-            // This version replaces unrecognized sequence w/ replacement character.
-            let new_string = if i > last_null {
-                String::from_utf8_lossy(&buffer[(last_null + 1)..i]).to_string()
-            } else {
-                String::new()
-            };
-            string_table.insert(last_null + 1, new_string);
-
-            last_null = i;
-        }
-    }
-
-    println!("\nFound string table: \n\n{:#?}\n", string_table);
-
-    string_table
 }
