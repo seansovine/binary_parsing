@@ -89,7 +89,7 @@ fn main() -> Result<(), String> {
     let program_headers = read_program_headers_64(reader.buffer(), &elf_header);
     println!("\n>> {} <<", "Program headers.".red());
 
-    for program_header in program_headers {
+    program_headers.iter().for_each(|program_header| {
         println!(
             "\n{} type: {}",
             "Program header".blue().bold(),
@@ -97,7 +97,7 @@ fn main() -> Result<(), String> {
         );
         // Pretty print struct in hex.
         println!("Data: {:#04x?}", program_header.header_data);
-    }
+    });
 
     // ---------------------
     // Read section headers.
@@ -111,7 +111,7 @@ fn main() -> Result<(), String> {
     let section_headers = read_section_headers_64(&mut reader, &elf_header);
     println!("\n>> {} <<", "Section headers.".red());
 
-    for section_header in section_headers {
+    section_headers.iter().for_each(|section_header| {
         println!(
             "\n{} type: {}",
             "Section header".yellow().bold(),
@@ -119,7 +119,7 @@ fn main() -> Result<(), String> {
         );
         println!("Section header name: {}", section_header.name);
         println!("Data: {:#04x?}", section_header.header_data);
-    }
+    });
 
     // --------
     // Success!
