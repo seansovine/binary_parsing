@@ -1,0 +1,7 @@
+[package]
+name = "from-bytes-test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+from-bytes-macro = { path = "../from-bytes-macro" }
