@@ -6,19 +6,6 @@ use syn::Data::Struct;
 use syn::Fields::Named;
 use syn::{parse_macro_input, DataStruct, DeriveInput, Expr, FieldsNamed, Lit, Type, TypeArray};
 
-struct FieldData {
-    name: String,
-    type_name: RecognizedField,
-}
-
-enum RecognizedField {
-    U8Array(usize),
-    U8,
-    U16,
-    U32,
-    U64,
-}
-
 fn field_type_name(field: &syn::Field) -> String {
     match &field.ty {
         Type::Path(p) => {
