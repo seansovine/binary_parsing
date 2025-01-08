@@ -24,6 +24,23 @@ Ambitiously, I'd eventually like to get this to the point of extracting
 processor instructions from the binary data. That would take
 some time, but would be educational to work towards, in any case.
 
+### `#[derive(FromBytes)]` macro experiment:
+
+The branch `parse_macro` has some code for a procedural `derive` macro
+for structs of the type used for representing low-level header data in this project.
+This macro applies to a struct of the appropriate kind (as used in this
+project) and adds a method to parse a slice of bytes in an instance of
+the struct.
+
+So far what we have adds a zero-initializer method appropriate
+to the struct, but with a little more work (mostly understanding the `syn`
+crate), we should be able to generate the desired `parse_from_bytes` method.
+In writing this I'm closely following Sam Van Overmeire's book _Write Powerful
+Rust Macros_.
+
+There is also a project for testing the use of the macro. The `cargo expand`
+command from `cargo-expand` is very useful for debugging.
+
 ## Bitmap
 
 The [`bitmap/`](bitmap/) folder contains code to parse BMP files. Actually,
