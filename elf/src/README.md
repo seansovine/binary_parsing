@@ -19,7 +19,10 @@ All three data structs -- for main, program, and section headers
 -- are parsed in essentially the same way. Each field of these
 structs is either
 a static array of `u8` or a simple unsigned integral type.
-We could make a `#[derive]`
-macro to automate adding a `parse` method to these structs, to reduce
-code duplication. And, there are other existing crates, like `binary_serde`,
-that do similar parsing, which we could potentially use.
+We have added a `#[derive(FromBytes)]`
+macro to automate adding a `parse_from_bytes` method to these structs, to reduce
+code duplication.
+
+There are other existing crates, like `binary_serde`,
+that do similar parsing, which we could potentially use. We will
+experiment with some of these in options in the future.

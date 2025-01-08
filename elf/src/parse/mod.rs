@@ -5,7 +5,7 @@ mod utils;
 use crate::file_read::FileReader;
 use crate::parse::utils::*;
 
-use std::collections::HashMap;
+use from_bytes_macro::FromBytes;
 use std::mem::size_of;
 
 // ----------------
@@ -13,78 +13,41 @@ use std::mem::size_of;
 
 pub const ELF64_HEADER_LEN: usize = 64;
 
-/// To start with, a low-level (uninterpreted)
-/// representation of the data in the header.
-#[derive(Debug)]
+#[derive(Debug, FromBytes)]
 pub struct Elf64Header {
-    // 8 bytes
     pub magic_bytes: [u8; 4],
     pub bitness: u8,
     pub endianness: u8,
     pub elf_version: u8,
     pub abi_os: u8,
-    // 8 bytes
+    //
     pub abi_version: u8,
     pub abi_padding: [u8; 7],
-    // 8 bytes
+    //
     pub object_type: [u8; 2],
     pub machine: [u8; 2],
     pub version: u32,
-    // 8 bytes
+    //
     pub entry_point: u64,
-    // 8 bytes
+    //
     pub program_header_offset: u64,
-    // 8 bytes
+    //
     pub section_header_offset: u64,
-    // 8 bytes
+    //
     pub flags: u32,
     pub header_size: u16,
     pub program_header_entry_size: u16,
-    // 8 bytes
+    //
     pub program_header_entry_count: u16,
     pub section_header_entry_size: u16,
     pub section_header_entry_count: u16,
     pub section_header_names_index: u16,
 }
 
-pub fn read_header_64(buffer: &[u8]) -> Elf64Header {
-    Elf64Header {
-        //
-        magic_bytes: buffer[0..4].try_into().unwrap(),
-        bitness: buffer[4],
-        endianness: buffer[5],
-        elf_version: buffer[6],
-        abi_os: buffer[7],
-        //
-        abi_version: buffer[8],
-        abi_padding: buffer[9..16].try_into().unwrap(),
-        //
-        object_type: buffer[16..18].try_into().unwrap(),
-        machine: buffer[18..20].try_into().unwrap(),
-        version: from_le_bytes!(u32, buffer, 20),
-        //
-        entry_point: from_le_bytes!(u64, buffer, 24),
-        //
-        program_header_offset: from_le_bytes!(u64, buffer, 32),
-        //
-        section_header_offset: from_le_bytes!(u64, buffer, 40),
-        //
-        flags: from_le_bytes!(u32, buffer, 48),
-        header_size: from_le_bytes!(u16, buffer, 52),
-        program_header_entry_size: from_le_bytes!(u16, buffer, 54),
-        //
-        program_header_entry_count: from_le_bytes!(u16, buffer, 56),
-        section_header_entry_size: from_le_bytes!(u16, buffer, 58),
-        section_header_entry_count: from_le_bytes!(u16, buffer, 60),
-        section_header_names_index: from_le_bytes!(u16, buffer, 62),
-        //
-    }
-}
-
 // ---------------------
 // Program header table.
 
-#[derive(Debug)]
+#[derive(Debug, FromBytes)]
 pub struct Elf64ProgramHeaderEntry {
     pub segment_type: [u8; 4],
     pub flags: u32,
@@ -119,7 +82,7 @@ pub fn read_program_headers_64(
         let start_offset = ph_offset + i * ph_size;
         let end_offset = start_offset + ph_size;
 
-        let ph = read_program_header_64(&buffer[start_offset..end_offset]);
+        let ph = Elf64ProgramHeaderEntry::parse_from_bytes(&buffer[start_offset..end_offset]);
 
         let type_string = program_header_type_string(&ph.segment_type);
 
@@ -132,23 +95,9 @@ pub fn read_program_headers_64(
     entries
 }
 
-pub fn read_program_header_64(buffer: &[u8]) -> Elf64ProgramHeaderEntry {
-    Elf64ProgramHeaderEntry {
-        segment_type: buffer[0..4].try_into().unwrap(),
-        flags: from_le_bytes!(u32, &buffer, 4),
-        //
-        offset: from_le_bytes!(u64, &buffer, 8),
-        virtual_address: from_le_bytes!(u64, &buffer, 16),
-        physical_address: from_le_bytes!(u64, &buffer, 24),
-        file_size: from_le_bytes!(u64, &buffer, 32),
-        mem_size: from_le_bytes!(u64, &buffer, 40),
-        align: from_le_bytes!(u64, &buffer, 48),
-    }
-}
-
 pub fn program_header_type_string(buffer: &[u8; 4]) -> String {
     let str_val = match buffer {
-        // NOTE: File bytes are little endian; hence reverse order here.
+        // File bytes are little endian; hence the reverse order here.
         b"\x00\x00\x00\x00" => "PT_NULL",
         b"\x01\x00\x00\x00" => "PT_LOAD",
         b"\x02\x00\x00\x00" => "PT_DYNAMIC",
@@ -164,6 +113,7 @@ pub fn program_header_type_string(buffer: &[u8; 4]) -> String {
                 buf if buf[3] & b'\xf0' == b'\x60' => "OS_SPECIFIC",
                 buf if buf[3] & b'\xf0' == b'\x70' => "PROCESSOR_SPECIFIC",
 
+                // TODO: Look up Linux OS-specific type names.
                 _ => "OTHER",
             };
 
@@ -177,7 +127,7 @@ pub fn program_header_type_string(buffer: &[u8; 4]) -> String {
 // ---------------------
 // Section header table.
 
-#[derive(Debug)]
+#[derive(Debug, FromBytes)]
 pub struct Elf64SectionHeaderEntry {
     pub name_offset: u32,
     pub section_type: [u8; 4],
@@ -263,31 +213,16 @@ pub fn read_section_header_entries_64(
         let start_offset = sh_offset + i * sh_size;
         let end_offset = start_offset + sh_size;
 
-        let sh = read_section_header_entry_64(&buffer[start_offset..end_offset]);
+        let sh = Elf64SectionHeaderEntry::parse_from_bytes(&buffer[start_offset..end_offset]);
         entries.push(sh)
     }
 
     entries
 }
 
-pub fn read_section_header_entry_64(buffer: &[u8]) -> Elf64SectionHeaderEntry {
-    Elf64SectionHeaderEntry {
-        name_offset: from_le_bytes!(u32, &buffer, 0),
-        section_type: buffer[4..8].try_into().unwrap(),
-        flags: from_le_bytes!(u64, buffer, 8),
-        addr: from_le_bytes!(u64, buffer, 16),
-        offset: from_le_bytes!(u64, buffer, 24),
-        size: from_le_bytes!(u64, buffer, 32),
-        link: from_le_bytes!(u32, buffer, 40),
-        info: from_le_bytes!(u32, buffer, 44),
-        addr_align: from_le_bytes!(u64, buffer, 48),
-        entry_size: from_le_bytes!(u64, buffer, 56),
-    }
-}
-
 pub fn section_header_type_string(buffer: &[u8; 4]) -> String {
     let str_val = match buffer {
-        // NOTE: File bytes are little endian; hence reverse order here.
+        // File bytes are little endian; hence the reverse order here.
         b"\x00\x00\x00\x00" => "SHT_NULL",
         b"\x01\x00\x00\x00" => "SHT_PROGBITS",
         b"\x02\x00\x00\x00" => "SHT_SYNTAB",
