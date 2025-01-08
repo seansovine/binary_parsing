@@ -26,18 +26,18 @@ some time, but would be educational to work towards, in any case.
 
 __Struct parsing `derive` macro:__
 
-The branch `parse_macro` has some code for a procedural macro `#[derive(FromBytes)]`,
+The subfolder `from-bytes-macro` has some code for a procedural macro `#[derive(FromBytes)]`,
 for use with structs of the type used for representing low-level header data in this project.
 When applied to a struct of the appropriate kind, this macro adds a static method to
 parse a slice of bytes into an instance of that struct.
 
-In writing this I'm closely following Sam Van Overmeire's book _Write Powerful
-Rust Macros_. I surely have much to learn about best practices for procedural
-macros, however. The `parse_macro` branch also has a project for testing the
-use of the macro, and the `cargo expand` command from the `cargo-expand` crate
-is very useful for debugging, when run on the test project.
+In writing this macro I'm closely following Sam Van Overmeire's book _Write Powerful
+Rust Macros_. However, I surely have much to learn about best practices for procedural
+macros, as I'm relatively new to creating them. The `from-bytes-test` subfolder has
+a project for testing the use of the macro, and the `cargo expand` command from the `cargo-expand`
+crate is very useful for debugging, when run on the test project.
 
-On the `parse_macro` branch, the `#[derive(FromBytes)]` macro is used for
+The `#[derive(FromBytes)]` macro is now used for
 the low-level parsing of header fields in the ELF parser.
 
 ## Bitmap

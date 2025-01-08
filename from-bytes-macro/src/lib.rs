@@ -1,37 +1,41 @@
 use proc_macro::TokenStream;
 
-use quote::{quote, quote_spanned};
+use quote::quote;
 
 use syn::Data::Struct;
 use syn::Fields::Named;
-use syn::{parse_macro_input, DataStruct, DeriveInput, Expr, FieldsNamed, Lit, Type, TypeArray};
+use syn::{
+    parse_macro_input, DataStruct, DeriveInput, Expr, ExprLit, FieldsNamed, Lit, Type, TypeArray,
+};
 
 fn field_type_name(field: &syn::Field) -> String {
     match &field.ty {
-        Type::Path(p) => {
-            p.path.segments.first().unwrap().ident.to_string()
-        }
+        Type::Path(p) => p.path.segments.first().unwrap().ident.to_string(),
 
-        Type::Array(_) => {
-            "array".into()
-        }
+        Type::Array(_) => "array".into(),
 
         _ => unimplemented!("Field type not supported by this macro."),
     }
 }
 
 fn array_len(array: &syn::TypeArray) -> usize {
-    let Expr::Lit(l) = &array.len else { panic!() };
-    let Lit::Int(i) = &l.lit else { panic!() };
+    let Expr::Lit(ExprLit {
+        lit: Lit::Int(i),
+        attrs: _,
+    }) = &array.len
+    else {
+        panic!()
+    };
 
     i.base10_parse().unwrap()
 }
 
 #[proc_macro_derive(FromBytes)]
-pub fn hello(item: TokenStream) -> TokenStream {
+pub fn parse(item: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(item as DeriveInput);
     let name = ast.ident;
 
+    // This bit is borrowed directly from Overmeire.
     let fields = match ast.data {
         Struct(DataStruct {
             fields: Named(FieldsNamed { ref named, .. }),

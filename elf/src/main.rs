@@ -23,8 +23,6 @@ extern crate from_bytes_macro;
 // TODO: Path hardcoded for testing.
 const FILE: &str = "/home/sean/Code/A-K/binary_parsing/elf/test/AudioPlayer";
 
-const EXTRA_DEBUG: bool = false;
-
 // -------------------
 // Program entrypoint.
 
@@ -47,11 +45,6 @@ fn main() -> Result<(), String> {
     // -------------------
     // Verify magic bytes.
 
-    if EXTRA_DEBUG {
-        let buffer_len = buffer.len();
-        println!("\nFirst {buffer_len} bytes are: {:x?}", buffer);
-    }
-
     if &buffer[..4] == b"\x7F\x45\x4c\x46" {
         println!("Found ELF magic bytes; will continue parsing file as ELF.");
     } else {
@@ -63,21 +56,16 @@ fn main() -> Result<(), String> {
     // ----------------
     // Read ELF header.
 
-    let elf_header: Elf64Header;
-
-    // This reader currently supports 64-bit little endian only.
-
-    // Ensure that file is 64-bit ELF.
-    if buffer[4] == b'\x02' && buffer[5] == b'\x01' {
-        elf_header = Elf64Header::parse_from_bytes(buffer);
+    // Ensure that file is 64-bit ELF; we currently only support that combo.
+    let elf_header: Elf64Header = if buffer[4] == b'\x02' && buffer[5] == b'\x01' {
+        Elf64Header::parse_from_bytes(buffer)
     } else {
         return Err(
             "This reader currently only supports 64-bit little endian ELF files.".to_string(),
         );
-    }
+    };
 
     println!("\n>> {} <<", "ELF main header.".red());
-    // Pretty print struct in hex.
     println!("\n{}: {:#04x?}", "Header data".green().bold(), elf_header);
 
     // ---------------------
@@ -98,7 +86,6 @@ fn main() -> Result<(), String> {
             "Program header".blue().bold(),
             program_header.type_string
         );
-        // Pretty print struct in hex.
         println!("Data: {:#04x?}", program_header.header_data);
     });
 
@@ -121,7 +108,6 @@ fn main() -> Result<(), String> {
             section_header.type_string
         );
         println!("Section header name: {}", section_header.name);
-        // Pretty print struct in hex.
         println!("Data: {:#04x?}", section_header.header_data);
     });
 
