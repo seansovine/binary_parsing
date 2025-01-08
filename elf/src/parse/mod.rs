@@ -13,34 +13,31 @@ use std::mem::size_of;
 
 pub const ELF64_HEADER_LEN: usize = 64;
 
-/// To start with, a low-level (uninterpreted)
-/// representation of the data in the header.
 #[derive(Debug, FromBytes)]
 pub struct Elf64Header {
-    // 8 bytes
     pub magic_bytes: [u8; 4],
     pub bitness: u8,
     pub endianness: u8,
     pub elf_version: u8,
     pub abi_os: u8,
-    // 8 bytes
+    //
     pub abi_version: u8,
     pub abi_padding: [u8; 7],
-    // 8 bytes
+    //
     pub object_type: [u8; 2],
     pub machine: [u8; 2],
     pub version: u32,
-    // 8 bytes
+    //
     pub entry_point: u64,
-    // 8 bytes
+    //
     pub program_header_offset: u64,
-    // 8 bytes
+    //
     pub section_header_offset: u64,
-    // 8 bytes
+    //
     pub flags: u32,
     pub header_size: u16,
     pub program_header_entry_size: u16,
-    // 8 bytes
+    //
     pub program_header_entry_count: u16,
     pub section_header_entry_size: u16,
     pub section_header_entry_count: u16,
@@ -100,7 +97,7 @@ pub fn read_program_headers_64(
 
 pub fn program_header_type_string(buffer: &[u8; 4]) -> String {
     let str_val = match buffer {
-        // NOTE: File bytes are little endian; hence reverse order here.
+        // File bytes are little endian; hence the reverse order here.
         b"\x00\x00\x00\x00" => "PT_NULL",
         b"\x01\x00\x00\x00" => "PT_LOAD",
         b"\x02\x00\x00\x00" => "PT_DYNAMIC",
@@ -116,6 +113,7 @@ pub fn program_header_type_string(buffer: &[u8; 4]) -> String {
                 buf if buf[3] & b'\xf0' == b'\x60' => "OS_SPECIFIC",
                 buf if buf[3] & b'\xf0' == b'\x70' => "PROCESSOR_SPECIFIC",
 
+                // TODO: Look up Linux OS-specific type names.
                 _ => "OTHER",
             };
 
@@ -215,9 +213,7 @@ pub fn read_section_header_entries_64(
         let start_offset = sh_offset + i * sh_size;
         let end_offset = start_offset + sh_size;
 
-        let sh = crate::parse::Elf64SectionHeaderEntry::parse_from_bytes(
-            &buffer[start_offset..end_offset],
-        );
+        let sh = Elf64SectionHeaderEntry::parse_from_bytes(&buffer[start_offset..end_offset]);
         entries.push(sh)
     }
 
@@ -226,7 +222,7 @@ pub fn read_section_header_entries_64(
 
 pub fn section_header_type_string(buffer: &[u8; 4]) -> String {
     let str_val = match buffer {
-        // NOTE: File bytes are little endian; hence reverse order here.
+        // File bytes are little endian; hence the reverse order here.
         b"\x00\x00\x00\x00" => "SHT_NULL",
         b"\x01\x00\x00\x00" => "SHT_PROGBITS",
         b"\x02\x00\x00\x00" => "SHT_SYNTAB",
