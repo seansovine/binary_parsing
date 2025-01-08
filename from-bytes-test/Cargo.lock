@@ -15,6 +15,8 @@ name = "from-bytes-test"
 version = "0.1.0"
 dependencies = [
  "from-bytes-macro",
+ "quote",
+ "syn",
 ]
 
 [[package]]

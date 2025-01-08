@@ -19,6 +19,27 @@ enum RecognizedField {
     U64,
 }
 
+fn field_type_name(field: &syn::Field) -> String {
+    match &field.ty {
+        Type::Path(p) => {
+            p.path.segments.first().unwrap().ident.to_string()
+        }
+
+        Type::Array(_) => {
+            "array".into()
+        }
+
+        _ => unimplemented!("Field type not supported by this macro."),
+    }
+}
+
+fn array_len(array: &syn::TypeArray) -> usize {
+    let Expr::Lit(l) = &array.len else { panic!() };
+    let Lit::Int(i) = &l.lit else { panic!() };
+
+    i.base10_parse().unwrap()
+}
+
 #[proc_macro_derive(FromBytes)]
 pub fn hello(item: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(item as DeriveInput);
@@ -32,42 +53,57 @@ pub fn hello(item: TokenStream) -> TokenStream {
         _ => unimplemented!("Macro only implemented for structs with named fields."),
     };
 
+    let mut current_byte: usize = 0;
     let builder_fields = fields.iter().map(|f| {
         let fname = &f.ident;
-        let ty = &f.ty;
 
-        let type_info = format!("{:?}", ty);
+        let result = if let Type::Array(ta) = &f.ty {
+            let length = array_len(ta);
+            let last_current = current_byte;
+            current_byte += length;
 
-        let init_fn = match ty {
-            Type::Array(TypeArray { elem, len, .. }) => {
-                let n = if let Expr::Lit(l) = len {
-                    if let Lit::Int(i) = &l.lit {
-                        i //.base10_parse::<usize>()
-                    } else {
-                        panic!("Expected int literal.");
-                    }
-                } else {
-                    panic!("Expected literal expression for array length.")
-                };
+            quote! { buffer[#last_current..#current_byte].try_into().unwrap() }
+        } else {
+            let last_current = current_byte;
+            match field_type_name(f).as_str() {
+                "u8" => {
+                    current_byte += 1;
+                }
 
-                quote! { [0; #n] }
-            },
+                "u16" => {
+                    current_byte += 2;
+                }
 
-            _ => quote! { 0 },
+                "u32" => {
+                    current_byte += 4;
+                }
+
+                "u64" => {
+                    current_byte += 8;
+                }
+
+                _ => {
+                    unimplemented!("Field type not supported by this macro.");
+                }
+            };
+
+            let ty = &f.ty;
+
+            quote! {
+                <#ty>::from_le_bytes(
+                    buffer[#last_current..#current_byte]
+                    .try_into()
+                    .unwrap(),
+                )
+            }
         };
 
-        quote! {  #fname: #init_fn }
-    }); //.collect::<Vec<_>>();
-
-    // TODO: This initial version generates a zero-initializer.
-    // In the next version, we need to iterate over the fields
-    // and use the type information along with a running byte
-    // total to actually generate the appropriate function calls
-    // to initialize the data from the provided byte slice.
+        quote! { #fname: #result }
+    });
 
     let parse_method = quote! {
         impl #name {
-            pub fn parse_from_bytes(bytes: &[u8]) -> Self {
+            pub fn parse_from_bytes(buffer: &[u8]) -> Self {
                 Self{
                     #(#builder_fields,)*
                 }

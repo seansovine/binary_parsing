@@ -14,6 +14,9 @@ use crate::parse::*;
 
 use colored::Colorize;
 
+#[macro_use]
+extern crate from_bytes_macro;
+
 // ------------
 // Some config.
 
@@ -66,7 +69,7 @@ fn main() -> Result<(), String> {
 
     // Ensure that file is 64-bit ELF.
     if buffer[4] == b'\x02' && buffer[5] == b'\x01' {
-        elf_header = read_header_64(buffer);
+        elf_header = Elf64Header::parse_from_bytes(buffer);
     } else {
         return Err(
             "This reader currently only supports 64-bit little endian ELF files.".to_string(),
@@ -75,7 +78,7 @@ fn main() -> Result<(), String> {
 
     println!("\n>> {} <<", "ELF main header.".red());
     // Pretty print struct in hex.
-    println!("\n{}: {:#04x?}", "Header data".blue().bold(), elf_header);
+    println!("\n{}: {:#04x?}", "Header data".green().bold(), elf_header);
 
     // ---------------------
     // Read program headers.

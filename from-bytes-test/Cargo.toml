@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 from-bytes-macro = { path = "../from-bytes-macro" }
+quote = "1.0.38"
+syn = {  version = "2.0.95" , features = ["extra-traits"] }
