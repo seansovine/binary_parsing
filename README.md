@@ -24,24 +24,21 @@ Ambitiously, I'd eventually like to get this to the point of extracting
 processor instructions from the binary data. That would take
 some time, but would be educational to work towards, in any case.
 
-### `#[derive(FromBytes)]` macro experiment:
+__Struct parsing `derive` macro:__
 
-The branch `parse_macro` has some code for a procedural `derive` macro
-for structs of the type used for representing low-level header data in this project.
-This macro applies to a struct of the appropriate kind (as used in this
-project) and will add a method to parse a slice of bytes into an instance of
-the struct.
+The branch `parse_macro` has some code for a procedural macro `#[derive(FromBytes)]`,
+for use with structs of the type used for representing low-level header data in this project.
+When applied to a struct of the appropriate kind, this macro adds a static method to
+parse a slice of bytes into an instance of that struct.
 
-What we have so far adds a zero-initializer method appropriate
-to the struct, but with a little more work (mostly understanding the `syn`
-crate), we should be able to generate the desired `parse_from_bytes` method.
 In writing this I'm closely following Sam Van Overmeire's book _Write Powerful
 Rust Macros_. I surely have much to learn about best practices for procedural
-macros, however.
+macros, however. The `parse_macro` branch also has a project for testing the
+use of the macro, and the `cargo expand` command from the `cargo-expand` crate
+is very useful for debugging, when run on the test project.
 
-There is also a project for testing the use of the macro. The `cargo expand`
-command from the `cargo-expand` crate is very useful for debugging, when run
-on the test project.
+On the `parse_macro` branch, the `#[derive(FromBytes)]` macro is used for
+the low-level parsing of header fields in the ELF parser.
 
 ## Bitmap
 
