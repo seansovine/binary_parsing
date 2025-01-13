@@ -1,13 +1,13 @@
-// libbfd requires this to be included first.
-#include "config.h"
+#include "bfd_wrapper.h"
 
-#include "bfd.h"
+#include <stdio.h>
 
 int main() {
-  const char* archName = "x86_64";
-  bfd_scan_arch(archName);
+  const char *archName = "x86_64";
+  bool success = try_find_arch(archName);
 
-  // TODO: We will handle the return value later.
-  // First we just want to get the dependencies straightened
-  // out so that this compiles.
+  const char *message = success ? "was" : "was not";
+  printf("The architecture '%s' %s found by libbfd.", archName, message);
+
+  return 0;
 }

@@ -66,8 +66,18 @@ set_target_properties(
 )
 target_link_libraries(bfd INTERFACE libiberty libsframe zlib zstd)
 
+# Add wrapper library exposing some bfd functionality.
+#
+
+add_library(
+		BfdWrapper
+		bfd_wrapper.c
+)
+target_include_directories(BfdWrapper PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(BfdWrapper PRIVATE bfd)
+
 # Build our test program.
 #
 
 add_executable(bfd_test test.c)
-target_link_libraries(bfd_test PRIVATE bfd)
+target_link_libraries(bfd_test PRIVATE BfdWrapper)
