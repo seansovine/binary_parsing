@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int main() {
-  const char *archName = "x86_64";
+  const char *archName = "i386:x86-64";
   bool success = try_find_arch(archName);
 
   const char *message = success ? "was" : "was not";
