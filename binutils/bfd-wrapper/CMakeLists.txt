@@ -36,7 +36,12 @@ set_target_properties(
 #  These are dependencies of the libbfd.
 
 add_library(libiberty STATIC IMPORTED)
-set_target_properties(libiberty PROPERTIES IMPORTED_LOCATION "${PARENT_DIR}/binutils-build/libiberty/libiberty.a")
+set_target_properties(
+		libiberty
+		PROPERTIES
+		IMPORTED_LOCATION
+		"${PARENT_DIR}/binutils-build/libiberty/libiberty.a"
+)
 
 add_library(libsframe STATIC IMPORTED)
 set_target_properties(
