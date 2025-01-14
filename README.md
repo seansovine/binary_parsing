@@ -40,6 +40,24 @@ crate is very useful for debugging, when run on the test project.
 The `#[derive(FromBytes)]` macro is now used for
 the low-level parsing of header fields in the ELF parser.
 
+__GNU binutils / BFD wrapper for Rust:__
+
+We have an initial proof-of-concept working towards providing an interface
+to some of the GNU binutils code through Rust. In particular, I've been (just) starting
+to look at how `objdump` does its disassembly. It turns out it uses the BFD library
+(which has an interesting history, see [Wikipedia](https://en.wikipedia.org/wiki/Binary_File_Descriptor_library)).
+So I've set up some infrastructure to build and link to the binutils code, and started
+writing a wrapper to expose some binutils / BFD functionality through the Rust FFI.
+
+See the `bfd-rust` / `binutils` folders for this. What we have so far is really just
+setting up infrastructure for building and linking and provides a simple wrapper for
+a `libbfd` function that is called from Rust, as a test that things are working.
+
+I chose to write a wrapper rather than to just make Rust bindings directly to
+the binutils code because there is some difficulty with using function pointers and C
+enum types across the Rust C FFI. The wrapper will create a simpler interface for some
+functionality that is easy for Rust to interop with.
+
 ## Bitmap
 
 The [`bitmap/`](bitmap/) folder contains code to parse BMP files. Actually,
